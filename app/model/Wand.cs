@@ -1,6 +1,6 @@
 namespace noita_shop.net.model;
 
-public class Wand
+public class Wand : IShopItem
 {
     public Guid Id { get; set; }
 
@@ -13,4 +13,6 @@ public class Wand
     public decimal Price { get; set; }
 
     public int Stock { get; set; }
+
+    public string Name => $"Wand (cap={MaxCapacity}, mana={MaxMana})";
 }

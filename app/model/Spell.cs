@@ -1,6 +1,6 @@
 namespace noita_shop.net.model;
 
-public class Spell
+public class Spell : IShopItem
 {
     public Guid Id { get; set; }
 

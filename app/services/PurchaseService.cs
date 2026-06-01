@@ -32,16 +32,11 @@ public class PurchaseService(ShopDbContext db, WizardService wizardService) : IP
             throw new InvalidOperationException("Волшебник не найден.");
         }
 
-        var (wands, wandTotal) = await ReserveItemsAsync<Wand>(
-            db.Wands, request.WandIds, "Палочка");
-
-        var (spells, spellTotal) = await ReserveItemsAsync<Spell>(
-            db.Spells, request.SpellIds, "Заклинание");
+        var (_, wandTotal) = await ReserveItemsAsync(db.Wands, request.WandIds, "Палочка");
+        var (_, spellTotal) = await ReserveItemsAsync(db.Spells, request.SpellIds, "Заклинание");
 
         wizardService.AddWandsToInventory(wizard, request.WandIds);
         wizardService.AddSpellsToInventory(wizard, request.SpellIds);
-
-        var total = wandTotal + spellTotal;
 
         var purchase = new Purchase
         {
@@ -49,7 +44,7 @@ public class PurchaseService(ShopDbContext db, WizardService wizardService) : IP
             WizardId = wizard.Id,
             WizardName = wizard.Name,
             CreatedAtUtc = DateTime.UtcNow,
-            Total = total,
+            Total = wandTotal + spellTotal,
             WandIds = request.WandIds.ToArray(),
             SpellIds = request.SpellIds.ToArray()
         };
@@ -75,8 +70,8 @@ public class PurchaseService(ShopDbContext db, WizardService wizardService) : IP
         var oldWizard = await db.Wizards.FirstAsync(x => x.Id == purchase.WizardId);
         wizardService.RemoveWandsFromInventory(oldWizard, purchase.WandIds);
         wizardService.RemoveSpellsFromInventory(oldWizard, purchase.SpellIds);
-        await RestoreStockAsync<Wand>(db.Wands, purchase.WandIds);
-        await RestoreStockAsync<Spell>(db.Spells, purchase.SpellIds);
+        await RestoreStockAsync(db.Wands, purchase.WandIds);
+        await RestoreStockAsync(db.Spells, purchase.SpellIds);
 
         var newWizard = await db.Wizards.FirstOrDefaultAsync(x => x.Id == request.WizardId);
         if (newWizard is null)
@@ -84,11 +79,8 @@ public class PurchaseService(ShopDbContext db, WizardService wizardService) : IP
             throw new InvalidOperationException("Волшебник не найден.");
         }
 
-        var (_, wandTotal) = await ReserveItemsAsync<Wand>(
-            db.Wands, request.WandIds, "Палочка");
-
-        var (_, spellTotal) = await ReserveItemsAsync<Spell>(
-            db.Spells, request.SpellIds, "Заклинание");
+        var (_, wandTotal) = await ReserveItemsAsync(db.Wands, request.WandIds, "Палочка");
+        var (_, spellTotal) = await ReserveItemsAsync(db.Spells, request.SpellIds, "Заклинание");
 
         wizardService.AddWandsToInventory(newWizard, request.WandIds);
         wizardService.AddSpellsToInventory(newWizard, request.SpellIds);
@@ -114,8 +106,8 @@ public class PurchaseService(ShopDbContext db, WizardService wizardService) : IP
         var wizard = await db.Wizards.FirstAsync(x => x.Id == purchase.WizardId);
         wizardService.RemoveWandsFromInventory(wizard, purchase.WandIds);
         wizardService.RemoveSpellsFromInventory(wizard, purchase.SpellIds);
-        await RestoreStockAsync<Wand>(db.Wands, purchase.WandIds);
-        await RestoreStockAsync<Spell>(db.Spells, purchase.SpellIds);
+        await RestoreStockAsync(db.Wands, purchase.WandIds);
+        await RestoreStockAsync(db.Spells, purchase.SpellIds);
 
         db.Purchases.Remove(purchase);
         await db.SaveChangesAsync();
@@ -123,10 +115,10 @@ public class PurchaseService(ShopDbContext db, WizardService wizardService) : IP
     }
 
     private static async Task<(List<T> items, decimal total)> ReserveItemsAsync<T>(
-        Microsoft.EntityFrameworkCore.DbSet<T> set,
+        DbSet<T> set,
         IReadOnlyList<Guid> ids,
         string entityLabel)
-        where T : class
+        where T : class, IShopItem
     {
         if (ids.Count == 0)
         {
@@ -135,39 +127,35 @@ public class PurchaseService(ShopDbContext db, WizardService wizardService) : IP
 
         var grouped = ids.GroupBy(x => x).ToDictionary(g => g.Key, g => g.Count());
         var items = await set
-            .Where(x => grouped.Keys.Contains(EF.Property<Guid>(x, "Id")))
+            .Where(x => grouped.Keys.Contains(x.Id))
             .ToListAsync();
 
         decimal total = 0m;
-
         foreach (var (itemId, qty) in grouped)
         {
-            var item = items.FirstOrDefault(x => EF.Property<Guid>(x, "Id") == itemId);
+            var item = items.FirstOrDefault(x => x.Id == itemId);
             if (item is null)
             {
                 throw new InvalidOperationException($"{entityLabel} {itemId} не найден(а).");
             }
 
-            var stock = (int)item.GetType().GetProperty("Stock")!.GetValue(item)!;
-            if (stock < qty)
+            if (item.Stock < qty)
             {
-                var name = (string)item.GetType().GetProperty("Name")!.GetValue(item)!;
                 throw new InvalidOperationException(
-                    $"Недостаточный остаток для \"{name}\". Осталось: {stock}.");
+                    $"Недостаточный остаток для \"{item.Name}\". Осталось: {item.Stock}.");
             }
 
-            item.GetType().GetProperty("Stock")!.SetValue(item, stock - qty);
-            var price = (decimal)item.GetType().GetProperty("Price")!.GetValue(item)!;
-            total += price * qty;
+            item.Stock -= qty;
+            total += item.Price * qty;
         }
 
         return (items, total);
     }
 
     private static async Task RestoreStockAsync<T>(
-        Microsoft.EntityFrameworkCore.DbSet<T> set,
+        DbSet<T> set,
         Guid[] ids)
-        where T : class
+        where T : class, IShopItem
     {
         if (ids.Length == 0)
         {
@@ -176,14 +164,13 @@ public class PurchaseService(ShopDbContext db, WizardService wizardService) : IP
 
         var distinct = ids.Distinct().ToList();
         var items = await set
-            .Where(x => distinct.Contains(EF.Property<Guid>(x, "Id")))
+            .Where(x => distinct.Contains(x.Id))
             .ToListAsync();
 
         foreach (var itemId in ids)
         {
-            var item = items.First(x => EF.Property<Guid>(x, "Id") == itemId);
-            var stock = (int)item.GetType().GetProperty("Stock")!.GetValue(item)!;
-            item.GetType().GetProperty("Stock")!.SetValue(item, stock + 1);
+            var item = items.First(x => x.Id == itemId);
+            item.Stock += 1;
         }
     }
 }
