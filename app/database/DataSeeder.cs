@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using noita_shop.net.database;
 using noita_shop.net.model;
 
 namespace noita_shop.net.database;
