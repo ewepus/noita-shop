@@ -5,24 +5,6 @@ using noita_shop.net.dto;
 using noita_shop.net.interfaces;
 using noita_shop.net.services;
 
-/*
- * =============================================================================
- * NOITA SHOP.NET — MINIMAL API ПРОЕКТ
- * =============================================================================
- *
- * Архитектура проекта:
- * - model     : сущности домена (Spell, Wand, Wizard, Purchase).
- * - database  : EF Core DbContext + PostgreSQL.
- * - services  : бизнес-логика каталога, покупок и управления инвентарём.
- * - api       : endpoint-модули (каждый модуль отвечает за свою группу ручек).
- *
- * Реализованные сценарии:
- * - просмотр и управление заклинаниями;
- * - просмотр и управление палочками (каждая хранит упорядоченный список заклинаний);
- * - регистрация волшебников (инвентарь: до 4 палочек, до 20 заклинаний);
- * - создание покупок со списанием со склада и пополнением инвентаря;
- * - выгрузка текстового чека по покупке.
- */
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -32,7 +14,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Noita Shop API",
         Version = "v1",
-        Description = "API магазина для волшебников: заклинания, палочки, покупки, инвентарь, чек."
+        Description = "API магазина заклинаний: заклинания, палочки, покупки, инвентарь, чек."
     });
 });
 
@@ -60,6 +42,7 @@ if (app.Environment.IsDevelopment())
     {
         var db = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
         await db.Database.EnsureCreatedAsync();
+        await DataSeeder.SeedAsync(db);
     }
 
     app.UseSwagger();
