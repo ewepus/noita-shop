@@ -1,0 +1,16 @@
+[
+    {
+        "id": "dddddddd-dddd-dddd-dddd-dddddddddd01",
+        "wizardId": "cccccccc-cccc-cccc-cccc-cccccccccc01",
+        "wizardName": "Nolla",
+        "createdAtUtc": "2026-05-04T13:49:19.258749Z",
+        "total": 1670.0,
+        "wandIds": [
+            "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb01"
+        ],
+        "spellIds": [
+            "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
+            "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2"
+        ]
+    }
+]

@@ -1,0 +1,45 @@
+@noita_shop_HostAddress = http://localhost:5209
+
+### 1) Каталог заклинаний
+GET {{noita_shop_HostAddress}}/api/spells
+Accept: application/json
+
+###
+
+### 2) Каталог палочек
+GET {{noita_shop_HostAddress}}/api/wands
+Accept: application/json
+
+###
+
+### 3) Список волшебников
+GET {{noita_shop_HostAddress}}/api/wizards
+Accept: application/json
+
+###
+
+### 4) Создать покупку (палочка + 2 заклинания)
+POST {{noita_shop_HostAddress}}/api/purchases
+Content-Type: application/json
+
+{
+  "wizardId": "cccccccc-cccc-cccc-cccc-cccccccccc01",
+  "wandIds": [
+    "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb01"
+  ],
+  "spellIds": [
+    "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
+    "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2"
+  ]
+}
+
+###
+
+### 5) Инвентарь волшебника после покупки
+GET {{noita_shop_HostAddress}}/api/wizards/cccccccc-cccc-cccc-cccc-cccccccccc01
+Accept: application/json
+
+###
+
+### 6) Скачать чек (подставьте ваш purchaseId)
+GET {{noita_shop_HostAddress}}/api/purchases/{purchaseId}/receipt

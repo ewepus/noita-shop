@@ -1,0 +1,14 @@
+NOITA SHOP.NET
+Кассовый чек
+----------------------------------------
+Покупка: dddddddd-dddd-dddd-dddd-dddddddddd01
+Дата (UTC): 2026-05-04 13:49:19
+Волшебник: Nolla (cccccccc-cccc-cccc-cccc-cccccccccc01)
+----------------------------------------
+Палочки (id):
+- bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb01
+Заклинания (id):
+- aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1
+- aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2
+----------------------------------------
+ИТОГО: 1670,00 GOLD
